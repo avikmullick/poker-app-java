@@ -16,14 +16,15 @@ import java.util.function.Supplier;
 public class TableService {
 
     private final Supplier<Deck> deckSupplier;
+    private GameState gameState ;
 
     public TableService(Supplier<Deck> deckSupplier) {
         this.deckSupplier = deckSupplier;
+        this.gameState = GameState.OPEN;
     }
 
     public GameState getState() {
-        // TODO: implement me
-        return GameState.ENDED;
+        return gameState;
     }
 
     public List<Player> getPlayers() {
