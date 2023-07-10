@@ -18,9 +18,12 @@ public class TableService {
     private final Supplier<Deck> deckSupplier;
     private GameState gameState ;
 
+    private List <Player> playerList;
+
     public TableService(Supplier<Deck> deckSupplier) {
         this.deckSupplier = deckSupplier;
         this.gameState = GameState.OPEN;
+        this.playerList = new ArrayList<>();
     }
 
     public GameState getState() {
@@ -28,10 +31,7 @@ public class TableService {
     }
 
     public List<Player> getPlayers() {
-        // TODO: implement me
-        return Arrays.asList(new Player("al-capone", "Al Capone", 100),
-                new Player("alice", "Alice", 100)
-        );
+    return playerList;
     }
 
     public List<Card> getPlayerCards(String playerId) {
@@ -93,8 +93,9 @@ public class TableService {
     }
 
     public void addPlayer(String playerId, String playerName) {
-        // TODO: implement me
-        System.out.printf("Player joined the table: %s%n", playerId);
+        Player newPlayer = new Player(playerId, playerName, 100);
+        newPlayer.setInactive();
+        playerList.add(newPlayer);
     }
 
     public void performAction(String action, int amount) throws IllegalAmountException {
