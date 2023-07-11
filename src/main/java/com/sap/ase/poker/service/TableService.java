@@ -20,6 +20,8 @@ public class TableService {
 
     private List <Player> playerList;
 
+    private Player currentPlayer;
+
     public TableService(Supplier<Deck> deckSupplier) {
         this.deckSupplier = deckSupplier;
         this.gameState = GameState.OPEN;
@@ -54,7 +56,7 @@ public class TableService {
 
     public Optional<Player> getCurrentPlayer() {
         // TODO: implement me
-        return Optional.of(new Player("al-capone", "Al", 100));
+        return Optional.ofNullable(currentPlayer);
     }
 
     public Map<String, Integer> getBets() {
@@ -89,7 +91,16 @@ public class TableService {
     }
 
     public void start() {
-        // TODO: implement me
+        if (playerList.size() >= 2 ) {
+            this.gameState = GameState.PRE_FLOP;
+            for (Player player : playerList){
+                Card firstCard = deckSupplier.get().draw() ;
+                Card secondCard = deckSupplier.get().draw() ;
+                player.setHandCards(Arrays.asList(firstCard,secondCard));
+                player.setActive();
+            }
+            this.currentPlayer = playerList.get(0);
+        }
     }
 
     public void addPlayer(String playerId, String playerName) {
