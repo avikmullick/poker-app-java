@@ -16,9 +16,9 @@ import java.util.function.Supplier;
 public class TableService {
 
     private final Supplier<Deck> deckSupplier;
-    private GameState gameState ;
+    private GameState gameState;
 
-    private List <Player> playerList;
+    private List<Player> playerList;
 
     private Player currentPlayer;
 
@@ -33,14 +33,18 @@ public class TableService {
     }
 
     public List<Player> getPlayers() {
-    return playerList;
+        return playerList;
     }
 
     public List<Card> getPlayerCards(String playerId) {
-        // TODO: implement me
-        return Arrays.asList(new Card(Kind.JACK, Suit.CLUBS),
-                new Card(Kind.TEN, Suit.CLUBS)
-        );
+        Player findPlayerUsingId = playerList.stream()
+                .filter(player -> playerId.equals(player.getId()))
+                .findAny()
+                .orElse(null);
+        if (findPlayerUsingId != null) {
+            return findPlayerUsingId.getHandCards();
+        }
+        return Collections.EMPTY_LIST;
     }
 
     public List<Card> getCommunityCards() {
@@ -91,12 +95,12 @@ public class TableService {
     }
 
     public void start() {
-        if (playerList.size() >= 2 ) {
+        if (playerList.size() >= 2) {
             this.gameState = GameState.PRE_FLOP;
-            for (Player player : playerList){
-                Card firstCard = deckSupplier.get().draw() ;
-                Card secondCard = deckSupplier.get().draw() ;
-                player.setHandCards(Arrays.asList(firstCard,secondCard));
+            for (Player player : playerList) {
+                Card firstCard = deckSupplier.get().draw();
+                Card secondCard = deckSupplier.get().draw();
+                player.setHandCards(Arrays.asList(firstCard, secondCard));
                 player.setActive();
             }
             this.currentPlayer = playerList.get(0);
