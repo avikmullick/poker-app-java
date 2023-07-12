@@ -26,12 +26,15 @@ public class TableService {
 
     private int currentPlayerIndex;
 
+    private int lastBetAmount;
+
     public TableService(Supplier<Deck> deckSupplier) {
         this.deckSupplier = deckSupplier;
         this.gameState = GameState.OPEN;
         this.playerList = new ArrayList<>();
         this.communityCardList = new ArrayList<>();
         currentPlayerIndex=0;
+        lastBetAmount=0;
     }
 
     public GameState getState() {
@@ -116,12 +119,17 @@ public class TableService {
     public void performAction(String action, int amount) throws IllegalAmountException {
         if(action.equals("check")) {
             if(amount!=0){
-                throw  new IllegalAmountException("During check action, bet amount should be zero.");
+                throw new IllegalAmountException("During check action, bet amount should be zero.");
             }
-            currentPlayerIndex++;
-            if (playerList.size() == currentPlayerIndex) {
-                currentPlayerIndex = 0;
-            }
+            do {
+                currentPlayerIndex++;
+                if (playerList.size() == currentPlayerIndex) {
+                    currentPlayerIndex = 0;
+                    if(!playerList.get(currentPlayerIndex).isActive()){
+                        return;
+                    }
+                }
+            }while(!playerList.get(currentPlayerIndex).isActive());
             this.currentPlayer = playerList.get(currentPlayerIndex);
 
             //means allPlayers have checked
@@ -131,8 +139,20 @@ public class TableService {
                 communityCardList.add(deckSupplier.get().draw());
                 communityCardList.add(deckSupplier.get().draw());
             }
+        } else if(action.equals("raise")){
+            if(amount<=lastBetAmount){
+                throw new IllegalAmountException("Raise amount must be strictly higher than the current bet. Current bet cannot be zero.");
+            }
+            if(currentPlayer.getCash()<amount){
+                throw new IllegalAmountException("The amount of the raise exceeds the player's remaining cash.");
+            }
+            currentPlayer.deductCash(amount);
         }
+        lastBetAmount=amount;
         System.out.printf("Action performed: %s, amount: %d%n", action, amount);
     }
 
+    public int getLastBetAmount() {
+        return lastBetAmount;
+    }
 }

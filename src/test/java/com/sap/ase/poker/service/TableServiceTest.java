@@ -118,7 +118,7 @@ class TableServiceTest {
   }
 
   @Test
-  void performAction() {
+  void performActionCheck() {
     setupForStartGame();
     //test case to perform Action
     Player currentPlayer= tableService.getCurrentPlayer().get();
@@ -155,6 +155,60 @@ class TableServiceTest {
       Assertions.assertThat(tableService.getCommunityCards()).isNotEmpty();
       Assertions.assertThat(tableService.getCommunityCards()).isInstanceOf(List.class);
     }
+  }
+
+  /**
+   * inactive players will not be considered for the next player's determination
+   */
+  @Test
+  void performActionCheckForInactiveUser() {
+    //will not start the game and performAction
+    firstPlayerId = "01";
+    secondPlayerId = "02";
+    tableService.addPlayer(firstPlayerId, "Chendil");
+    tableService.addPlayer(secondPlayerId, "Smitha");
+    tableService.performAction("check",0);
+    Assertions.assertThat(tableService.getCurrentPlayer()).isNotPresent();
+  }
+
+  @Test
+  void performActionRaiseIllegalAmount() {
+    setupForStartGame();
+    //test case to perform Action
+    Player currentPlayer = tableService.getCurrentPlayer().get();
+    org.junit.jupiter.api.Assertions.assertThrows(
+      IllegalAmountException.class, () -> {
+        tableService.performAction("raise", 0);
+      });
+
+    tableService.performAction("raise", 40);
+    org.junit.jupiter.api.Assertions.assertThrows(
+      IllegalAmountException.class, () -> {
+        tableService.performAction("raise", 30);
+      });
+
+  }
+
+  @Test
+  void performActionRaiseDeductCash() {
+    setupForStartGame();
+    //test case to perform Action
+    Player currentPlayer = tableService.getCurrentPlayer().get();
+    int previousPlayerCash = currentPlayer.getCash();
+    tableService.performAction("raise", 40);
+    int currentPlayerCash = currentPlayer.getCash();
+    Assertions.assertThat(currentPlayerCash).isEqualTo(previousPlayerCash-40);
+  }
+
+  @Test
+  void performActionRaiseIllegalExceptionDeductCash() {
+    setupForStartGame();
+    Player currentPlayer = tableService.getCurrentPlayer().get();
+    //If the amount of the raise exceeds the player's remaining cash, an IllegalAmountException should be thrown
+    org.junit.jupiter.api.Assertions.assertThrows(
+      IllegalAmountException.class, () -> {
+        tableService.performAction("raise", currentPlayer.getCash()+50);
+      });
   }
 
   @Test
