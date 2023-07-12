@@ -67,6 +67,13 @@ class TableServiceTest {
   }
 
   @Test
+  void duplicatePlayer() {
+    tableService.addPlayer("01", "Chendil");
+    tableService.addPlayer("01", "Chendil");
+    Assertions.assertThat(tableService.getPlayers()).hasSize(1);
+  }
+
+  @Test
   void checkStartConditions() {
 
     setupForStartGame();
@@ -238,7 +245,7 @@ class TableServiceTest {
     tableService.performAction("raise", 50);
     //Game continues
     Assertions.assertThat(tableService.getCurrentPlayer().get().getId()).isEqualTo(firstPlayerId);
-    Assertions.assertThat(tableService.getBets()).containsEntry(currentPlayer.getName(),currentPlayer.getBet());
+    Assertions.assertThat(tableService.getBets()).containsEntry(currentPlayer.getId(),currentPlayer.getBet());
     Assertions.assertThat(tableService.getBets()).hasSize(2);
   }
 
