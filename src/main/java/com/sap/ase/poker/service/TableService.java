@@ -20,12 +20,15 @@ public class TableService {
 
     private List<Player> playerList;
 
+    private List<Card> communityCardList;
+
     private Player currentPlayer;
 
     public TableService(Supplier<Deck> deckSupplier) {
         this.deckSupplier = deckSupplier;
         this.gameState = GameState.OPEN;
         this.playerList = new ArrayList<>();
+        this.communityCardList = new ArrayList<>();
     }
 
     public GameState getState() {
@@ -48,14 +51,7 @@ public class TableService {
     }
 
     public List<Card> getCommunityCards() {
-        // TODO: implement me
-        return Arrays.asList(
-                new Card(Kind.ACE, Suit.CLUBS),
-                new Card(Kind.KING, Suit.CLUBS),
-                new Card(Kind.QUEEN, Suit.CLUBS),
-                new Card(Kind.FOUR, Suit.HEARTS),
-                new Card(Kind.SEVEN, Suit.SPADES)
-        );
+        return communityCardList;
     }
 
     public Optional<Player> getCurrentPlayer() {
