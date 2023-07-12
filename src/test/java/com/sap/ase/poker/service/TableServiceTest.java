@@ -1,7 +1,9 @@
 package com.sap.ase.poker.service;
 
 import com.sap.ase.poker.model.GameState;
+import com.sap.ase.poker.model.IllegalActionException;
 import com.sap.ase.poker.model.IllegalAmountException;
+import com.sap.ase.poker.model.InactivePlayerException;
 import com.sap.ase.poker.model.Player;
 import com.sap.ase.poker.model.deck.Card;
 import com.sap.ase.poker.model.deck.Deck;
@@ -9,7 +11,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -118,6 +119,14 @@ class TableServiceTest {
   }
 
   @Test
+  void returnEmptyCommunityCardsInPreFlop(){
+    setupForStartGame();
+    if(tableService.getState().equals(GameState.PRE_FLOP)) {
+      Assertions.assertThat(tableService.getCommunityCards()).isEmpty();
+    }
+  }
+
+  @Test
   void performActionCheck() {
     setupForStartGame();
     //test case to perform Action
@@ -131,12 +140,10 @@ class TableServiceTest {
     setupForStartGame();
     //test case to perform Action
     Player currentPlayer = tableService.getCurrentPlayer().get();
-    IllegalAmountException illegalAmountException = org.junit.jupiter.api.Assertions.assertThrows(
-      IllegalAmountException.class, () -> {
-        tableService.performAction("check", 20);
-      });
+    Assertions.assertThatThrownBy(() -> {
+      tableService.performAction("check", 20);
+    }).isInstanceOf(IllegalAmountException.class).hasMessage("During check action, bet amount should be zero.");
   }
-
 
   @Test
   void performActionCheckAllCheckedPlayers() {
@@ -167,7 +174,9 @@ class TableServiceTest {
     secondPlayerId = "02";
     tableService.addPlayer(firstPlayerId, "Chendil");
     tableService.addPlayer(secondPlayerId, "Smitha");
-    tableService.performAction("check",0);
+    Assertions.assertThatThrownBy(() -> {
+      tableService.performAction("check", 0);
+    }).isInstanceOf(InactivePlayerException.class).hasMessage("All players cannot be inactive");
     Assertions.assertThat(tableService.getCurrentPlayer()).isNotPresent();
   }
 
@@ -175,18 +184,16 @@ class TableServiceTest {
   void performActionRaiseIllegalAmount() {
     setupForStartGame();
     //test case to perform Action
+    //Raise amount must be strictly higher than the current bet. Current bet cannot be zero.
     Player currentPlayer = tableService.getCurrentPlayer().get();
-    org.junit.jupiter.api.Assertions.assertThrows(
-      IllegalAmountException.class, () -> {
-        tableService.performAction("raise", 0);
-      });
+    Assertions.assertThatThrownBy(() -> {
+      tableService.performAction("raise", 0);
+    }).isInstanceOf(IllegalAmountException.class).hasMessage("Raise amount must be strictly higher than the current bet. Current bet cannot be zero.");
 
     tableService.performAction("raise", 40);
-    org.junit.jupiter.api.Assertions.assertThrows(
-      IllegalAmountException.class, () -> {
-        tableService.performAction("raise", 30);
-      });
-
+    Assertions.assertThatThrownBy(() -> {
+      tableService.performAction("raise", 30);
+    }).isInstanceOf(IllegalAmountException.class).hasMessage("Raise amount must be strictly higher than the current bet. Current bet cannot be zero.");
   }
 
   @Test
@@ -204,19 +211,45 @@ class TableServiceTest {
   void performActionRaiseIllegalExceptionDeductCash() {
     setupForStartGame();
     Player currentPlayer = tableService.getCurrentPlayer().get();
+    int raisedAmount=currentPlayer.getCash()+50;
     //If the amount of the raise exceeds the player's remaining cash, an IllegalAmountException should be thrown
-    org.junit.jupiter.api.Assertions.assertThrows(
-      IllegalAmountException.class, () -> {
-        tableService.performAction("raise", currentPlayer.getCash()+50);
-      });
+    Assertions.assertThatThrownBy(() -> {
+      tableService.performAction("raise", raisedAmount);
+    }).isInstanceOf(IllegalAmountException.class).hasMessage("The amount of the raise exceeds the player's remaining cash.");
   }
 
   @Test
-  void returnEmptyCommunityCardsInPreFlop(){
+  void performActionRaiseIllegalExceptionExceedsOtherPlayersCash() {
     setupForStartGame();
-    if(tableService.getState().equals(GameState.PRE_FLOP)) {
-      Assertions.assertThat(tableService.getCommunityCards()).isEmpty();
-    }
+    Player currentPlayer = tableService.getCurrentPlayer().get();
+    tableService.performAction("raise", 60);
+    //If the amount of the raise exceeds any other players remaining cash an IllegalAmountException should be thrown, e.g. if Bob only has 10 left, Alice cannot raise to more than 10
+    Assertions.assertThatThrownBy(() -> {
+      tableService.performAction("raise", 90);
+    }).isInstanceOf(IllegalAmountException.class).hasMessageContaining("The amount of the raise exceeds any other players remaining cash.");
+  }
+
+  @Test
+  void performActionRaiseNextPlayerRaisingMoreAmount() {
+    setupForStartGame();
+    //Raising can also be done by a player, if the previous player raised already, e.g. if Bob raised before to 10, Alice can raise to 20
+    Player currentPlayer = tableService.getCurrentPlayer().get();
+    tableService.performAction("raise", 40);
+    tableService.performAction("raise", 50);
+    //Game continues
+    Assertions.assertThat(tableService.getCurrentPlayer().get().getId()).isEqualTo(firstPlayerId);
+    Assertions.assertThat(tableService.getBets()).containsEntry(currentPlayer.getName(),currentPlayer.getBet());
+    Assertions.assertThat(tableService.getBets()).hasSize(2);
+  }
+
+  @Test
+  void performInvalidAction() {
+    setupForStartGame();
+    //Invalid Action
+    Player currentPlayer = tableService.getCurrentPlayer().get();
+    Assertions.assertThatThrownBy(() -> {
+      tableService.performAction("invalid", 40);
+    }).isInstanceOf(IllegalActionException.class).hasMessage("Action is Invalid invalid");
   }
   
   private void setupForStartGame(){

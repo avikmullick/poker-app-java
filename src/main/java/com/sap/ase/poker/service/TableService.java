@@ -1,7 +1,9 @@
 package com.sap.ase.poker.service;
 
 import com.sap.ase.poker.model.GameState;
+import com.sap.ase.poker.model.IllegalActionException;
 import com.sap.ase.poker.model.IllegalAmountException;
+import com.sap.ase.poker.model.InactivePlayerException;
 import com.sap.ase.poker.model.Player;
 import com.sap.ase.poker.model.deck.Card;
 import com.sap.ase.poker.model.deck.Deck;
@@ -28,6 +30,8 @@ public class TableService {
 
     private int lastBetAmount;
 
+    private HashMap<String, Integer> playersBetMap;
+
     public TableService(Supplier<Deck> deckSupplier) {
         this.deckSupplier = deckSupplier;
         this.gameState = GameState.OPEN;
@@ -35,6 +39,7 @@ public class TableService {
         this.communityCardList = new ArrayList<>();
         currentPlayerIndex=0;
         lastBetAmount=0;
+        playersBetMap=new HashMap<>();
     }
 
     public GameState getState() {
@@ -53,7 +58,7 @@ public class TableService {
         if (findPlayerUsingId != null) {
             return findPlayerUsingId.getHandCards();
         }
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     public List<Card> getCommunityCards() {
@@ -61,18 +66,11 @@ public class TableService {
     }
 
     public Optional<Player> getCurrentPlayer() {
-        // TODO: implement me
         return Optional.ofNullable(currentPlayer);
     }
 
     public Map<String, Integer> getBets() {
-        // TODO: implement me
-        return new HashMap<String, Integer>() {
-            {
-                put("al-capone", 100);
-                put("alice", 50);
-            }
-        };
+        return playersBetMap;
     }
 
     public int getPot() {
@@ -116,43 +114,68 @@ public class TableService {
         playerList.add(newPlayer);
     }
 
-    public void performAction(String action, int amount) throws IllegalAmountException {
-        if(action.equals("check")) {
+    public void performAction(String action, int amount) throws IllegalAmountException,IllegalActionException {
+        switch(action){
+        case "check" :
             if(amount!=0){
                 throw new IllegalAmountException("During check action, bet amount should be zero.");
             }
-            do {
-                currentPlayerIndex++;
-                if (playerList.size() == currentPlayerIndex) {
-                    currentPlayerIndex = 0;
-                    if(!playerList.get(currentPlayerIndex).isActive()){
-                        return;
-                    }
-                }
-            }while(!playerList.get(currentPlayerIndex).isActive());
-            this.currentPlayer = playerList.get(currentPlayerIndex);
-
             //means allPlayers have checked
-            if(currentPlayerIndex==0){
+            if(currentPlayerIndex==playerList.size()-1){
                 this.gameState=GameState.FLOP;
                 communityCardList.add(deckSupplier.get().draw());
                 communityCardList.add(deckSupplier.get().draw());
                 communityCardList.add(deckSupplier.get().draw());
             }
-        } else if(action.equals("raise")){
+            break;
+        case "raise" :
             if(amount<=lastBetAmount){
                 throw new IllegalAmountException("Raise amount must be strictly higher than the current bet. Current bet cannot be zero.");
             }
             if(currentPlayer.getCash()<amount){
                 throw new IllegalAmountException("The amount of the raise exceeds the player's remaining cash.");
             }
-            currentPlayer.deductCash(amount);
+            otherPlayersRemainingCashCannotBeGreaterThanRaisedCash(amount);
+            currentPlayer.bet(amount);
+            playersBetMap.put(currentPlayer.getName(),currentPlayer.getBet());
+            break;
+        default : throw new IllegalActionException("Action is Invalid "+action);
         }
+        deriveNextPlayerToBeCurrentPlayer();
         lastBetAmount=amount;
         System.out.printf("Action performed: %s, amount: %d%n", action, amount);
     }
 
-    public int getLastBetAmount() {
-        return lastBetAmount;
+    /**
+     * Derive Next player
+     */
+    private void deriveNextPlayerToBeCurrentPlayer() {
+        do {
+            currentPlayerIndex++;
+            if (playerList.size() == currentPlayerIndex) {
+                currentPlayerIndex = 0;
+                if(!playerList.get(currentPlayerIndex).isActive()){
+                    throw new InactivePlayerException("All players cannot be inactive");
+                }
+            }
+        }while(!playerList.get(currentPlayerIndex).isActive());
+        this.currentPlayer = playerList.get(currentPlayerIndex);
+    }
+
+    /**
+     * If the amount of the raise exceeds any other players remaining cash an IllegalAmountException should be thrown,
+     * e.g. if Bob only has 10 left, Alice cannot raise to more than 10
+     *
+     * @param raisedAmount
+     */
+    private void otherPlayersRemainingCashCannotBeGreaterThanRaisedCash(int raisedAmount) {
+        for (Player player : playerList) {
+            if (player.getCash() < raisedAmount) {
+                throw new IllegalAmountException(
+                  "The amount of the raise exceeds any other players remaining cash." + player.getName() + " only has "
+                    + player.getCash() + " left, " + getCurrentPlayer() + " cannot raise to more than "
+                    + player.getCash());
+            }
+        }
     }
 }
