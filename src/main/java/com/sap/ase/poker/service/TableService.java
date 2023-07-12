@@ -109,6 +109,14 @@ public class TableService {
     }
 
     public void addPlayer(String playerId, String playerName) {
+        Player findPlayerUsingId = playerList.stream()
+          .filter(player -> playerId.equals(player.getId()))
+          .findAny()
+          .orElse(null);
+        if (findPlayerUsingId != null) {
+            System.out.printf("Duplicate Player %s%n",playerId);
+            return;
+        }
         Player newPlayer = new Player(playerId, playerName, 100);
         newPlayer.setInactive();
         playerList.add(newPlayer);
@@ -137,7 +145,7 @@ public class TableService {
             }
             otherPlayersRemainingCashCannotBeGreaterThanRaisedCash(amount);
             currentPlayer.bet(amount);
-            playersBetMap.put(currentPlayer.getName(),currentPlayer.getBet());
+            playersBetMap.put(currentPlayer.getId(),currentPlayer.getBet());
             break;
         default : throw new IllegalActionException("Action is Invalid "+action);
         }
