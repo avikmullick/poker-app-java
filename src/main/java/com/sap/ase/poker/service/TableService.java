@@ -20,6 +20,8 @@ public class TableService {
 
     private List<Player> playerList;
 
+    private List<Card> communityCardList;
+
     private Player currentPlayer;
 
     private int currentPlayerIndex;
@@ -28,6 +30,7 @@ public class TableService {
         this.deckSupplier = deckSupplier;
         this.gameState = GameState.OPEN;
         this.playerList = new ArrayList<>();
+        this.communityCardList = new ArrayList<>();
         currentPlayerIndex=0;
     }
 
@@ -51,14 +54,7 @@ public class TableService {
     }
 
     public List<Card> getCommunityCards() {
-        // TODO: implement me
-        return Arrays.asList(
-                new Card(Kind.ACE, Suit.CLUBS),
-                new Card(Kind.KING, Suit.CLUBS),
-                new Card(Kind.QUEEN, Suit.CLUBS),
-                new Card(Kind.FOUR, Suit.HEARTS),
-                new Card(Kind.SEVEN, Suit.SPADES)
-        );
+        return communityCardList;
     }
 
     public Optional<Player> getCurrentPlayer() {
@@ -127,6 +123,14 @@ public class TableService {
                 currentPlayerIndex = 0;
             }
             this.currentPlayer = playerList.get(currentPlayerIndex);
+
+            //means allPlayers have checked
+            if(currentPlayerIndex==0){
+                this.gameState=GameState.FLOP;
+                communityCardList.add(deckSupplier.get().draw());
+                communityCardList.add(deckSupplier.get().draw());
+                communityCardList.add(deckSupplier.get().draw());
+            }
         }
         System.out.printf("Action performed: %s, amount: %d%n", action, amount);
     }
