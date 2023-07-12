@@ -1,12 +1,15 @@
 package com.sap.ase.poker.service;
 
 import com.sap.ase.poker.model.GameState;
+import com.sap.ase.poker.model.IllegalAmountException;
+import com.sap.ase.poker.model.Player;
 import com.sap.ase.poker.model.deck.Card;
 import com.sap.ase.poker.model.deck.Deck;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -123,6 +126,76 @@ class TableServiceTest {
     Assertions.assertThat(tableService.getPlayerCards(firstPlayerId)).hasSize(2);
     Assertions.assertThat(tableService.getPlayerCards(secondPlayerId)).isNotEmpty();
     Assertions.assertThat(tableService.getPlayerCards(secondPlayerId)).hasSize(2);
+  }
+
+  @Test
+  void performAction() {
+    String firstPlayerId = "01";
+    String secondPlayerId = "02";
+    tableService.addPlayer(firstPlayerId, "Chendil");
+    tableService.addPlayer(secondPlayerId, "Smitha");
+    Mockito.when(deckSupplier.get()).thenReturn(deck);
+    Mockito.when(deck.draw()).thenReturn(card);
+    //Before Start of the game
+    Assertions.assertThat(tableService.getPlayerCards(firstPlayerId)).isEmpty();
+    Assertions.assertThat(tableService.getPlayerCards(secondPlayerId)).isEmpty();
+
+    tableService.start();
+
+    //test case to perform Action
+    Player currentPlayer= tableService.getCurrentPlayer().get();
+    tableService.performAction("check",0);
+    Assertions.assertThat(currentPlayer).isNotEqualTo(tableService.getCurrentPlayer().get());
+  }
+
+  @Test
+  void performActionCheckIllegalAmount() {
+    String firstPlayerId = "01";
+    String secondPlayerId = "02";
+    tableService.addPlayer(firstPlayerId, "Chendil");
+    tableService.addPlayer(secondPlayerId, "Smitha");
+    Mockito.when(deckSupplier.get()).thenReturn(deck);
+    Mockito.when(deck.draw()).thenReturn(card);
+    //Before Start of the game
+    Assertions.assertThat(tableService.getPlayerCards(firstPlayerId)).isEmpty();
+    Assertions.assertThat(tableService.getPlayerCards(secondPlayerId)).isEmpty();
+
+    tableService.start();
+
+    //test case to perform Action
+    Player currentPlayer = tableService.getCurrentPlayer().get();
+    IllegalAmountException illegalAmountException = org.junit.jupiter.api.Assertions.assertThrows(
+      IllegalAmountException.class, () -> {
+        tableService.performAction("check", 20);
+      });
+  }
+
+
+  @Test
+  void performActionCheckAllCheckedPlayers() {
+    String firstPlayerId = "01";
+    String secondPlayerId = "02";
+    tableService.addPlayer(firstPlayerId, "Chendil");
+    tableService.addPlayer(secondPlayerId, "Smitha");
+    Mockito.when(deckSupplier.get()).thenReturn(deck);
+    Mockito.when(deck.draw()).thenReturn(card);
+    //Before Start of the game
+    Assertions.assertThat(tableService.getPlayerCards(firstPlayerId)).isEmpty();
+    Assertions.assertThat(tableService.getPlayerCards(secondPlayerId)).isEmpty();
+
+    tableService.start();
+
+    //test case to perform Action
+    Player playerChendil = tableService.getCurrentPlayer().get();
+    tableService.performAction("check",0);
+    Assertions.assertThat(playerChendil.getId()).isEqualTo(firstPlayerId);
+    Assertions.assertThat(tableService.getCurrentPlayer().get().getId()).isEqualTo(secondPlayerId);
+    Player playerSmitha = tableService.getCurrentPlayer().get();
+    tableService.performAction("check",0);
+    Assertions.assertThat(tableService.getState()).isEqualTo(GameState.FLOP);
+    Assertions.assertThat(tableService.getCommunityCards()).hasSize(3);
+    Assertions.assertThat(tableService.getCurrentPlayer().get().getId()).isEqualTo(firstPlayerId);
+
   }
 
 }
