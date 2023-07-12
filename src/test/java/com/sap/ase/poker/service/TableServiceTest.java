@@ -1,12 +1,15 @@
 package com.sap.ase.poker.service;
 
 import com.sap.ase.poker.model.GameState;
+import com.sap.ase.poker.model.IllegalAmountException;
+import com.sap.ase.poker.model.Player;
 import com.sap.ase.poker.model.deck.Card;
 import com.sap.ase.poker.model.deck.Deck;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -115,17 +118,50 @@ class TableServiceTest {
   }
 
   @Test
+  void performAction() {
+    setupForStartGame();
+    //test case to perform Action
+    Player currentPlayer= tableService.getCurrentPlayer().get();
+    tableService.performAction("check",0);
+    Assertions.assertThat(currentPlayer).isNotEqualTo(tableService.getCurrentPlayer().get());
+  }
+
+  @Test
+  void performActionCheckIllegalAmount() {
+    setupForStartGame();
+    //test case to perform Action
+    Player currentPlayer = tableService.getCurrentPlayer().get();
+    IllegalAmountException illegalAmountException = org.junit.jupiter.api.Assertions.assertThrows(
+      IllegalAmountException.class, () -> {
+        tableService.performAction("check", 20);
+      });
+  }
+
+
+  @Test
+  void performActionCheckAllCheckedPlayers() {
+    setupForStartGame();
+    //test case to perform Action
+    Player playerChendil = tableService.getCurrentPlayer().get();
+    tableService.performAction("check",0);
+    Assertions.assertThat(tableService.getCurrentPlayer().get().getId()).isEqualTo(secondPlayerId);
+    Player playerSmitha = tableService.getCurrentPlayer().get();
+    tableService.performAction("check",0);
+    Assertions.assertThat(tableService.getState()).isEqualTo(GameState.FLOP);
+    Assertions.assertThat(tableService.getCommunityCards()).hasSize(3);
+    Assertions.assertThat(tableService.getCurrentPlayer().get().getId()).isEqualTo(firstPlayerId);
+    //should return a list with one Card-class instance per community card
+    if(tableService.getState().equals(GameState.FLOP)) {
+      Assertions.assertThat(tableService.getCommunityCards()).isNotEmpty();
+      Assertions.assertThat(tableService.getCommunityCards()).isInstanceOf(List.class);
+    }
+  }
+
+  @Test
   void returnEmptyCommunityCardsInPreFlop(){
     setupForStartGame();
     if(tableService.getState().equals(GameState.PRE_FLOP)) {
       Assertions.assertThat(tableService.getCommunityCards()).isEmpty();
-    }
-  }
-  @Test
-  void returnCommunityCardList(){
-    setupForStartGame();
-    if(tableService.getState().equals(GameState.FLOP)) {
-      Assertions.assertThat(tableService.getCommunityCards()).isNotEmpty();
     }
   }
   

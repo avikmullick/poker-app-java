@@ -24,11 +24,14 @@ public class TableService {
 
     private Player currentPlayer;
 
+    private int currentPlayerIndex;
+
     public TableService(Supplier<Deck> deckSupplier) {
         this.deckSupplier = deckSupplier;
         this.gameState = GameState.OPEN;
         this.playerList = new ArrayList<>();
         this.communityCardList = new ArrayList<>();
+        currentPlayerIndex=0;
     }
 
     public GameState getState() {
@@ -100,6 +103,7 @@ public class TableService {
                 player.setActive();
             }
             this.currentPlayer = playerList.get(0);
+            this.currentPlayerIndex=0;
         }
     }
 
@@ -110,7 +114,24 @@ public class TableService {
     }
 
     public void performAction(String action, int amount) throws IllegalAmountException {
-        // TODO: implement me
+        if(action.equals("check")) {
+            if(amount!=0){
+                throw  new IllegalAmountException("During check action, bet amount should be zero.");
+            }
+            currentPlayerIndex++;
+            if (playerList.size() == currentPlayerIndex) {
+                currentPlayerIndex = 0;
+            }
+            this.currentPlayer = playerList.get(currentPlayerIndex);
+
+            //means allPlayers have checked
+            if(currentPlayerIndex==0){
+                this.gameState=GameState.FLOP;
+                communityCardList.add(deckSupplier.get().draw());
+                communityCardList.add(deckSupplier.get().draw());
+                communityCardList.add(deckSupplier.get().draw());
+            }
+        }
         System.out.printf("Action performed: %s, amount: %d%n", action, amount);
     }
 
