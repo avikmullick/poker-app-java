@@ -145,6 +145,9 @@
                                         <exclude>com.sap.ase.poker.data.*</exclude>
                                         <exclude>*Exception</exclude>
                                         <exclude>com.sap.ase.poker.model.deck.Card</exclude>
+                                        <exclude>com.sap.ase.poker.model.hands.Hand</exclude>
+                                        <exclude>com.sap.ase.poker.model.hands.HighCard</exclude>
+                                        <exclude>com.sap.ase.poker.model.Player</exclude>
                                     </excludes>
                                     <limits>
                                         <limit>
@@ -164,16 +167,19 @@
                     </execution>
                 </executions>
                 <configuration>
-	                <excludes>
-	                     <exclude>*Test.class</exclude>
-	                     <exclude>com/sap/ase/poker/dto/*</exclude>
-	                     <exclude>com/sap/ase/poker/security/*</exclude>
-	                     <exclude>com/sap/ase/poker/config/*</exclude>
-	                     <exclude>com/sap/ase/poker/PokerBootApplication.class</exclude>
-	                     <exclude>com/sap/ase/poker/data/*</exclude>
-	                     <exclude>com/sap/ase/poker/**/*Exception.class</exclude>
-	                     <exclude>com/sap/ase/poker/model/deck/Card.class</exclude>
-	                 </excludes>
+                    <excludes>
+                        <exclude>*Test.class</exclude>
+                        <exclude>com/sap/ase/poker/dto/*</exclude>
+                        <exclude>com/sap/ase/poker/security/*</exclude>
+                        <exclude>com/sap/ase/poker/config/*</exclude>
+                        <exclude>com/sap/ase/poker/PokerBootApplication.class</exclude>
+                        <exclude>com/sap/ase/poker/data/*</exclude>
+                        <exclude>com/sap/ase/poker/**/*Exception.class</exclude>
+                        <exclude>com/sap/ase/poker/model/deck/Card.class</exclude>
+                        <exclude>com/sap/ase/poker/model/hands/Hand.class</exclude>
+                        <exclude>com/sap/ase/poker/model/hands/HighCard.class</exclude>
+                        <exclude>com/sap/ase/poker/model/Player.class</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
         </plugins>
