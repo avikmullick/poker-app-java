@@ -258,6 +258,47 @@ class TableServiceTest {
       tableService.performAction("invalid", 40);
     }).isInstanceOf(IllegalActionException.class).hasMessage("Action is Invalid invalid");
   }
+
+  @Test
+  void performCallWithoutRaise(){
+
+    Assertions.assertThatThrownBy(() -> {
+      tableService.performAction("call", 40);
+    }).isInstanceOf(IllegalActionException.class).hasMessage("Call not possible before Raise");
+  }
+
+  @Test
+  void performCallAfterRaise(){
+
+    setupForStartGame();
+    tableService.performAction("raise", 49);
+    Player oldPlayer = tableService.getCurrentPlayer().get();
+    int oldPlayerCash = oldPlayer.getCash();
+    tableService.performAction("call",0);
+    //Check if cash is deducted
+    Assertions.assertThat(oldPlayer.getCash()).isEqualTo(oldPlayerCash-49);
+    //Check if current player is the next player in the list
+    Player newPlayer = tableService.getCurrentPlayer().get();
+    Assertions.assertThat(newPlayer).isNotSameAs(oldPlayer);
+
+  }
+
+  @Test
+  void performRaiseRaiseCall(){
+    setupForStartGame();
+    Player firstPlayer = tableService.getCurrentPlayer().get();
+    int firstPlayerCash = firstPlayer.getCash();
+    //first player raise 40
+    tableService.performAction("raise", 40);
+    //second player raise 50
+    tableService.performAction("raise", 50);
+   //first player calls -> his total cash reduces by 50
+    tableService.performAction("call",0);
+    //Check if cash is deducted
+    Assertions.assertThat(firstPlayer.getCash()).isEqualTo(firstPlayerCash-50);
+  }
+
+
   
   private void setupForStartGame(){
 
