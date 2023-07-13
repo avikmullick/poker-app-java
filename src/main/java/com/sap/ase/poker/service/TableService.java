@@ -51,10 +51,7 @@ public class TableService {
     }
 
     public List<Card> getPlayerCards(String playerId) {
-        Player findPlayerUsingId = playerList.stream()
-                .filter(player -> playerId.equals(player.getId()))
-                .findAny()
-                .orElse(null);
+        Player findPlayerUsingId = getFindPlayerUsingId(playerId);
         if (findPlayerUsingId != null) {
             return findPlayerUsingId.getHandCards();
         }
@@ -109,10 +106,7 @@ public class TableService {
     }
 
     public void addPlayer(String playerId, String playerName) {
-        Player findPlayerUsingId = playerList.stream()
-          .filter(player -> playerId.equals(player.getId()))
-          .findAny()
-          .orElse(null);
+        Player findPlayerUsingId = getFindPlayerUsingId(playerId);
         if (findPlayerUsingId != null) {
             System.out.printf("Duplicate Player %s%n",playerId);
             return;
@@ -185,5 +179,18 @@ public class TableService {
                     + player.getCash());
             }
         }
+    }
+
+    /**
+     * Find player using playerId
+     * @param playerId
+     * @return
+     */
+    private Player getFindPlayerUsingId(String playerId) {
+        Player findPlayerUsingId = playerList.stream()
+          .filter(player -> playerId.equals(player.getId()))
+          .findAny()
+          .orElse(null);
+        return findPlayerUsingId;
     }
 }
