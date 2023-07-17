@@ -30,7 +30,7 @@ public class TableService {
 
     private int lastBetAmount;
 
-    private int potAmount ;
+    private int potAmount;
 
     private HashMap<String, Integer> playersBetMap;
 
@@ -42,7 +42,7 @@ public class TableService {
         currentPlayerIndex = 0;
         lastBetAmount = 0;
         playersBetMap = new HashMap<>();
-        potAmount = 0 ;
+        potAmount = 0;
     }
 
     public GameState getState() {
@@ -167,6 +167,26 @@ public class TableService {
                 break;
             default:
                 throw new IllegalActionException("Action is Invalid " + action);
+
+            case "fold":
+                int count = 0;
+
+                Player currentPlayer = getCurrentPlayer().get();
+                currentPlayer.setInactive();
+
+                for (Player player : playerList
+                ) {
+                    if ((player != currentPlayer && player.isActive())) {
+                        count++;
+                        if (count > 1) {
+                            break;
+                        }
+                    }
+                }
+
+                if (count == 1) {
+                    this.gameState = GameState.ENDED;
+                }
         }
         deriveNextPlayerToBeCurrentPlayer();
         lastBetAmount = betAmount;
@@ -208,13 +228,14 @@ public class TableService {
 
     /**
      * Find player using playerId
+     *
      * @param playerId
      * @return
      */
     private Player getFindPlayerUsingId(String playerId) {
         return playerList.stream()
-          .filter(player -> playerId.equals(player.getId()))
-          .findAny()
-          .orElse(null);
+                .filter(player -> playerId.equals(player.getId()))
+                .findAny()
+                .orElse(null);
     }
 }
