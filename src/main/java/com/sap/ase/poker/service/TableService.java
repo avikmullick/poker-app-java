@@ -126,6 +126,9 @@ public class TableService {
                 if (amount != 0) {
                     throw new IllegalAmountException("During check action, bet amount should be zero.");
                 }
+                if (lastBetAmount > 0){
+                    throw new IllegalActionException("Check action invalid, as previous bet amount exists");
+                }
                 //means allPlayers have checked
                 if (currentPlayerIndex == playerList.size() - 1) {
                     this.gameState = GameState.FLOP;
@@ -204,11 +207,20 @@ public class TableService {
                 if (!playerList.get(currentPlayerIndex).isActive()) {
                     throw new InactivePlayerException("All players cannot be inactive");
                 }
+                gameState = GameState.FLOP;
+                calculatePotAmount();
             }
         } while (!playerList.get(currentPlayerIndex).isActive());
         this.currentPlayer = playerList.get(currentPlayerIndex);
     }
 
+    private void calculatePotAmount() {
+        for (Player player : playerList) {
+            if (player.isActive()) {
+                this.potAmount = this.potAmount + player.getBet();
+            }
+        }
+    }
     /**
      * If the amount of the raise exceeds any other players remaining cash an IllegalAmountException should be thrown,
      * e.g. if Bob only has 10 left, Alice cannot raise to more than 10

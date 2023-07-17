@@ -147,6 +147,35 @@ class TableServiceTest {
     }
 
     @Test
+    void performActionCheckWithBetAmountNotZero(){
+        setupForStartGame();
+        tableService.performAction("raise", 10);
+
+        Assertions.assertThatThrownBy(() -> {
+            tableService.performAction("check", 0);
+        }).isInstanceOf(IllegalActionException.class).hasMessage("Check action invalid, as previous bet amount exists");
+    }
+
+
+    @Test
+    void checkEndOfRound(){
+        setupForStartGame();
+        tableService.performAction("check", 0);
+        tableService.performAction("check", 0);
+        Assertions.assertThat(tableService.getState()).isEqualTo(GameState.FLOP);
+        Assertions.assertThat(tableService.getPot()).isEqualTo(0);
+    }
+
+    @Test
+    void raiseEndOfRound(){
+        setupForStartGame();
+        tableService.performAction("raise", 10);
+        tableService.performAction("raise", 20);
+        Assertions.assertThat(tableService.getState()).isEqualTo(GameState.FLOP);
+        Assertions.assertThat(tableService.getPot()).isEqualTo(30);
+    }
+
+    @Test
     void performActionCheckIllegalAmount() {
         setupForStartGame();
         //test case to perform Action
