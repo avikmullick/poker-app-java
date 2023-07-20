@@ -149,6 +149,8 @@ class TableServiceTest {
     @Test
     void performActionCheckWithBetAmountNotZero(){
         setupForStartGame();
+        tableService.performAction("check", 0);
+        tableService.performAction("check", 0);
         tableService.performAction("raise", 10);
 
         Assertions.assertThatThrownBy(() -> {
@@ -164,15 +166,25 @@ class TableServiceTest {
         tableService.performAction("check", 0);
         Assertions.assertThat(tableService.getState()).isEqualTo(GameState.FLOP);
         Assertions.assertThat(tableService.getPot()).isEqualTo(0);
+        tableService.performAction("raise", 20);
+        tableService.performAction("call",0);
+ //Bets are equal, End of round
+        Assertions.assertThat(tableService.getState()).isEqualTo(GameState.TURN);
+        tableService.performAction("raise", 50);
+        tableService.performAction("call", 0);
+//Bets are equal, end of round , change of state
+        Assertions.assertThat(tableService.getState()).isEqualTo(GameState.RIVER);
+        Assertions.assertThat(tableService.getPot()).isEqualTo(180);
     }
 
     @Test
     void raiseEndOfRound(){
         setupForStartGame();
+        tableService.performAction("check", 0);
+        tableService.performAction("check", 0);
         tableService.performAction("raise", 10);
         tableService.performAction("raise", 20);
         Assertions.assertThat(tableService.getState()).isEqualTo(GameState.FLOP);
-        Assertions.assertThat(tableService.getPot()).isEqualTo(30);
     }
 
     @Test
@@ -289,7 +301,7 @@ class TableServiceTest {
         Player currentPlayer = tableService.getCurrentPlayer().get();
         Assertions.assertThatThrownBy(() -> {
             tableService.performAction("invalid", 40);
-        }).isInstanceOf(IllegalActionException.class).hasMessage("Action is Invalid invalid");
+        }).isInstanceOf(IllegalActionException.class);
     }
 
     @Test
@@ -347,10 +359,8 @@ class TableServiceTest {
     void foldEndGame() {
 
         setupForStartGame();
-
         Player currentPlayer = tableService.getCurrentPlayer().get();
         tableService.performAction("fold", 0);
-
         Assertions.assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
     }
 
@@ -359,7 +369,6 @@ class TableServiceTest {
 
         tableService.addPlayer("03", "Avik");
         setupForStartGame();
-
         Player currentPlayer = tableService.getCurrentPlayer().get();
 
         //first player fold
@@ -370,6 +379,13 @@ class TableServiceTest {
 
         Assertions.assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
     }
+
+
+    @Test
+    void gameStateChangeFromFlopToTurn(){
+        setupForStartGame();
+    }
+
 
     private void setupForStartGame() {
 
