@@ -9,6 +9,7 @@ import com.sap.ase.poker.model.deck.Card;
 import com.sap.ase.poker.model.deck.Deck;
 import com.sap.ase.poker.model.deck.Kind;
 import com.sap.ase.poker.model.deck.Suit;
+import com.sap.ase.poker.model.rules.Winners;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -33,6 +34,8 @@ public class TableService {
     private int potAmount;
 
     private HashMap<String, Integer> playersBetMap;
+
+    private Winners winners;
 
     public TableService(Supplier<Deck> deckSupplier) {
         this.deckSupplier = deckSupplier;
@@ -78,19 +81,23 @@ public class TableService {
     }
 
     public Optional<Player> getWinner() {
-        // TODO: implement me
-        return Optional.of(new Player("al-capone", "Al capone", 500));
+        if (Objects.nonNull(winners)){
+            return Optional.ofNullable(winners.getWinners().get(0));
+        }
+        else{
+            return Optional.of(new Player("", "", 0));
+        }
     }
 
     public List<Card> getWinnerHand() {
-        // TODO: implement me
-        return Arrays.asList(
-                new Card(Kind.ACE, Suit.CLUBS),
-                new Card(Kind.KING, Suit.CLUBS),
-                new Card(Kind.QUEEN, Suit.CLUBS),
-                new Card(Kind.JACK, Suit.CLUBS),
-                new Card(Kind.TEN, Suit.CLUBS)
-        );
+        if(winners.getWinningHand().isPresent()){
+            return winners.getWinningHand().get().getCards();
+        } else if (this.getState() == GameState.ENDED) {
+            return winners.getWinners().get(0).getHandCards();
+        } else {
+            List<Card> cards;
+            return cards = new ArrayList<Card>();
+        }
     }
 
     public void start() {
@@ -301,4 +308,10 @@ public class TableService {
                 .findAny()
                 .orElse(null);
     }
+
+    public List<Player> getWinners() {
+        return winners.getWinners();
+    }
+
+
 }
