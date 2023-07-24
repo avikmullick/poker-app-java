@@ -7,7 +7,6 @@ import com.sap.ase.poker.model.InactivePlayerException;
 import com.sap.ase.poker.model.Player;
 import com.sap.ase.poker.model.deck.Card;
 import com.sap.ase.poker.model.deck.Deck;
-import com.sap.ase.poker.model.rules.Winners;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -147,7 +146,7 @@ public class TableService {
                     throw new IllegalActionException("Check action invalid, as previous bet amount exists");
                 }
                 //means allPlayers have checked
-                if (currentPlayerIndex == playerList.size() - 1) {
+                if (currentPlayerIndex == playerList.size() - 1 && gameState==GameState.PRE_FLOP) {
                     this.gameState = GameState.FLOP;
                     communityCardList.add(deckSupplier.get().draw());
                     communityCardList.add(deckSupplier.get().draw());
@@ -256,13 +255,15 @@ public class TableService {
                 break;
             case FLOP:
                 gameState = GameState.TURN;
+                communityCardList.add(deckSupplier.get().draw());
                 break;
             case TURN:
                 gameState = GameState.RIVER;
+                communityCardList.add(deckSupplier.get().draw());
                 break;
-/*            case RIVER:
+            case RIVER:
                 gameState = GameState.ENDED;
-                break;*/
+                break;
         }
     }
 
