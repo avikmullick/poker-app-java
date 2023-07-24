@@ -40,8 +40,6 @@ public class TableService {
 
     private HashMap<String, Integer> playersBetMap;
 
-    private Winners winners;
-
     public TableService(Supplier<Deck> deckSupplier) {
         this.deckSupplier = deckSupplier;
         this.gameState = GameState.OPEN;
@@ -91,7 +89,20 @@ public class TableService {
 
     public List<Card> getWinnerHand() {
         if(winnerPlayer!=null){
-            return winnerPlayer.getHandCards();
+            boolean winnerDueToActionFold=true;
+            for (Player player : playerList) {
+                if (player.getId() != winnerPlayer.getId()) {
+                    if(player.isActive()){
+                        winnerDueToActionFold=false;
+                        break;
+                    }
+                }
+            }
+            if(winnerDueToActionFold){
+                return new ArrayList<Card>();
+            } else {
+                return winnerPlayer.getHandCards();
+            }
         } else {
             return new ArrayList<Card>();
         }

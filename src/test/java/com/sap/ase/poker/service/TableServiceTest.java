@@ -154,10 +154,16 @@ class TableServiceTest {
     @Test
     void performActionCheckWithBetAmountNotZero(){
         setupForStartGame();
+        int cashPlayer1=tableService.getPlayers().get(0).getCash();
+        int cashPlayer2=tableService.getPlayers().get(1).getCash();
         tableService.performAction("check", 0);
         tableService.performAction("check", 0);
+        //It does not deduct any cash from the player; bet of player remains the same
+        Assertions.assertThat(tableService.getPlayers().get(0).getCash()).isEqualTo(cashPlayer1);
+        Assertions.assertThat(tableService.getPlayers().get(1).getCash()).isEqualTo(cashPlayer2);
         tableService.performAction("raise", 10);
 
+        //If a player tries to check, but some other player already bet more money on the table, it should throw an IllegalActionException
         Assertions.assertThatThrownBy(() -> {
             tableService.performAction("check", 0);
         }).isInstanceOf(IllegalActionException.class).hasMessage("Check action invalid, as previous bet amount exists");
@@ -402,7 +408,17 @@ class TableServiceTest {
         Assertions.assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
         Assertions.assertThat(tableService.getWinner()).isPresent();
         Assertions.assertThat(tableService.getWinner().get().getId()).isEqualTo("02");
-        Assertions.assertThat(tableService.getWinnerHand()).isNotEmpty();
+        Assertions.assertThat(tableService.getWinnerHand()).isEmpty();
+    }
+
+    @Test
+    void getWinnerTestWithoutAWinner(){
+
+        tableService.addPlayer("03", "Avik");
+        setupForStartGame();
+        Player currentPlayer = tableService.getCurrentPlayer().get();
+        Assertions.assertThat(tableService.getWinner()).isNotPresent();
+        Assertions.assertThat(tableService.getWinnerHand()).isEmpty();
     }
 
     @Test
@@ -426,7 +442,7 @@ class TableServiceTest {
     }
 
     @Test
-    @DisplayName("all player folded cannot fold")
+    @DisplayName("Return empty winnerHand if all players folded")
     void getEmptyWinnerHandList(){
         tableService.addPlayer("03", "Avik");
         setupForStartGame();
@@ -444,7 +460,7 @@ class TableServiceTest {
         }).isInstanceOf(InactivePlayerException.class).hasMessage("All players cannot be inactive");
 
         assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
-
+        assertThat(tableService.getWinnerHand()).isEmpty();
     }
 
     @Test
@@ -462,7 +478,7 @@ class TableServiceTest {
 
         assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
 // On state ENDED - Implementation of determine winners and winning hand is pending.
-        Assertions.assertThat(tableService.getWinnerHand()).isNotEmpty();
+        Assertions.assertThat(tableService.getWinnerHand()).isEmpty();
 
     }
 
@@ -484,8 +500,8 @@ class TableServiceTest {
         // tableService.performAction("fold", 0);
 
         assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
-// On state ENDED - Implementation of determine winners and winning hand is pending.
-        Assertions.assertThat(tableService.getWinnerHand()).isNotEmpty();
+        // On state ENDED - Implementation of determine winners and winning hand is pending.
+        Assertions.assertThat(tableService.getWinnerHand()).isEmpty();
 
     }
     @Test
