@@ -7,12 +7,16 @@ import com.sap.ase.poker.model.InactivePlayerException;
 import com.sap.ase.poker.model.Player;
 import com.sap.ase.poker.model.deck.Card;
 import com.sap.ase.poker.model.deck.Deck;
-import com.sap.ase.poker.model.deck.Kind;
-import com.sap.ase.poker.model.deck.Suit;
 import com.sap.ase.poker.model.rules.Winners;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 @Service
@@ -26,6 +30,7 @@ public class TableService {
     private List<Card> communityCardList;
 
     private Player currentPlayer;
+    private Player winnerPlayer;
 
     private int currentPlayerIndex;
 
@@ -81,22 +86,14 @@ public class TableService {
     }
 
     public Optional<Player> getWinner() {
-        if (Objects.nonNull(winners)){
-            return Optional.ofNullable(winners.getWinners().get(0));
-        }
-        else{
-            return Optional.of(new Player("", "", 0));
-        }
+        return Optional.ofNullable(winnerPlayer);
     }
 
     public List<Card> getWinnerHand() {
-        if(winners.getWinningHand().isPresent()){
-            return winners.getWinningHand().get().getCards();
-        } else if (this.getState() == GameState.ENDED) {
-            return winners.getWinners().get(0).getHandCards();
+        if(winnerPlayer!=null){
+            return winnerPlayer.getHandCards();
         } else {
-            List<Card> cards;
-            return cards = new ArrayList<Card>();
+            return new ArrayList<Card>();
         }
     }
 
@@ -183,19 +180,17 @@ public class TableService {
                 playersBetMap.put(currentPlayer.getId(), currentPlayer.getBet());
                 betAmount = lastBetAmount;
                 break;
-            default:
-                throw new IllegalActionException("Action is Invalid " + action);
-
             case "fold":
                 int count = 0;
 
                 Player currentPlayer = getCurrentPlayer().get();
                 currentPlayer.setInactive();
-
+                Player expectedWinner=null;
                 for (Player player : playerList
                 ) {
                     if ((player != currentPlayer && player.isActive())) {
                         count++;
+                        expectedWinner=player;
                         if (count > 1) {
                             break;
                         }
@@ -203,9 +198,12 @@ public class TableService {
                 }
 
                 if (count == 1) {
+                    winnerPlayer=expectedWinner;
                     this.gameState = GameState.ENDED;
                 }
-
+                break;
+            default:
+                throw new IllegalActionException("Action is Invalid " + action);
         }
         lastBetAmount = betAmount;
         System.out.printf("Action performed: %s, amount: %d%n", action, amount);
@@ -308,10 +306,5 @@ public class TableService {
                 .findAny()
                 .orElse(null);
     }
-
-    public List<Player> getWinners() {
-        return winners.getWinners();
-    }
-
 
 }

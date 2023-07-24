@@ -398,10 +398,11 @@ class TableServiceTest {
         //Second player fold
         tableService.performAction("fold", 0);
 
+        // On state ENDED - Implementation of determine winners is pending.
         Assertions.assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
-// On state ENDED - Implementation of determine winners is pending.
-        Assertions.assertThat(tableService.getWinner().isPresent()).isTrue();
-
+        Assertions.assertThat(tableService.getWinner()).isPresent();
+        Assertions.assertThat(tableService.getWinner().get().getId()).isEqualTo("02");
+        Assertions.assertThat(tableService.getWinnerHand()).isNotEmpty();
     }
 
     @Test
@@ -420,12 +421,12 @@ class TableServiceTest {
 
         assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
 // On state ENDED - Implementation of determine winners is pending.
-         Assertions.assertThat(tableService.getWinners().get(0).getName()).isEqualTo("Avik");
+         Assertions.assertThat(tableService.getWinner().get().getName()).isEqualTo("Smitha");
 
     }
 
     @Test
-    @DisplayName("Return empty winnerHand if all players folded")
+    @DisplayName("all player folded cannot fold")
     void getEmptyWinnerHandList(){
         tableService.addPlayer("03", "Avik");
         setupForStartGame();
@@ -438,11 +439,11 @@ class TableServiceTest {
         tableService.performAction("fold", 0);
 
         //Third player fold
-       // tableService.performAction("fold", 0);
+        Assertions.assertThatThrownBy(() -> {
+            tableService.performAction("fold", 0);
+        }).isInstanceOf(InactivePlayerException.class).hasMessage("All players cannot be inactive");
 
         assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
-// On state ENDED - Implementation of determine winners and winning hand is pending.
-        Assertions.assertThat(tableService.getWinnerHand()).isEmpty();
 
     }
 
