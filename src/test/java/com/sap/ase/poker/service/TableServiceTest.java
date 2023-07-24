@@ -355,6 +355,21 @@ class TableServiceTest {
     }
 
     @Test
+    void performRaiseRaiseCallExceedsRemainingCash() {
+        setupForStartGame();
+        Player firstPlayer = tableService.getCurrentPlayer().get();
+        int firstPlayerCash = firstPlayer.getCash();
+        //first player raise 40
+        tableService.performAction("raise", 40);
+        //second player raise 50
+        tableService.performAction("raise", 50);
+        tableService.getPlayers().get(0).deductCash(80);
+        Assertions.assertThatThrownBy(() -> {
+            tableService.performAction("call", 40);
+        }).isInstanceOf(IllegalAmountException.class).hasMessage("The amount of call exceeds the player's remaining cash.");
+    }
+
+    @Test
     void foldMarkPlayerAsInactive() {
 
         setupForStartGame();
@@ -413,6 +428,27 @@ class TableServiceTest {
 
     @Test
     void getWinnerTestWithoutAWinner(){
+
+        tableService.addPlayer("03", "Avik");
+        setupForStartGame();
+        Player currentPlayer = tableService.getCurrentPlayer().get();
+
+        //first player fold
+        tableService.performAction("fold", 0);
+
+        //Second player fold
+        tableService.performAction("fold", 0);
+
+        // On state ENDED - Implementation of determine winners is pending.
+        Assertions.assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
+        Assertions.assertThat(tableService.getWinner()).isPresent();
+        Assertions.assertThat(tableService.getWinner().get().getId()).isEqualTo("02");
+        tableService.getPlayers().get(0).setActive();
+        Assertions.assertThat(tableService.getWinnerHand()).isNotEmpty();
+    }
+
+    @Test
+    void getWinnerTestWithAWinnerNonFoldAction(){
 
         tableService.addPlayer("03", "Avik");
         setupForStartGame();

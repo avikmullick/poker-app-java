@@ -259,9 +259,9 @@ public class TableService {
             case TURN:
                 gameState = GameState.RIVER;
                 break;
-            case RIVER:
+/*            case RIVER:
                 gameState = GameState.ENDED;
-                break;
+                break;*/
         }
     }
 
