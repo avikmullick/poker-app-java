@@ -7,6 +7,9 @@ import com.sap.ase.poker.model.InactivePlayerException;
 import com.sap.ase.poker.model.Player;
 import com.sap.ase.poker.model.deck.Card;
 import com.sap.ase.poker.model.deck.Deck;
+import com.sap.ase.poker.model.rules.HandRules;
+import com.sap.ase.poker.model.rules.WinnerRules;
+import com.sap.ase.poker.model.rules.Winners;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -17,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @Service
 public class TableService {
@@ -100,7 +104,7 @@ public class TableService {
             if(winnerDueToActionFold){
                 return new ArrayList<Card>();
             } else {
-                return winnerPlayer.getHandCards();
+                return getWinner().get().getHandCards();
             }
         } else {
             return new ArrayList<Card>();
@@ -211,11 +215,26 @@ public class TableService {
                 if (count == 1) {
                     winnerPlayer=expectedWinner;
                     this.gameState = GameState.ENDED;
+                    postProcessingAfterAction(betAmount,oldGameState,action,amount);
+                    return;
                 }
                 break;
             default:
                 throw new IllegalActionException("Action is Invalid " + action);
         }
+        postProcessingAfterAction(betAmount,oldGameState,action,amount);
+        if(gameState == GameState.ENDED){
+            //Kailash ----DETERMINE_WINNERS, POT DISTRIBUTION
+                HandRules handRules=new HandRules();
+                WinnerRules winnerRules=new WinnerRules(handRules);
+                Winners winners =winnerRules.findWinners(communityCardList,playerList.stream().filter(player -> player.isActive()).collect(
+                  Collectors.toList()));
+                winnerPlayer=winners.getWinners().get(0);
+                winnerPlayer.addCash(potAmount);
+        }
+    }
+
+    private void postProcessingAfterAction(int betAmount,GameState oldGameState,String action, int amount){
         lastBetAmount = betAmount;
         System.out.printf("Action performed: %s, amount: %d%n", action, amount);
         deriveNextPlayerToBeCurrentPlayer();
@@ -225,9 +244,6 @@ public class TableService {
         if ( currentPlayerIndex == 0 && oldGameState == this.gameState && checkEndOfRound()){
             changeGameState();
             calculatePotAmount();
-        }
-        if(gameState == GameState.ENDED){
-            //Kailash ----DETERMINE_WINNERS, POT DISTRIBUTION
         }
     }
 
