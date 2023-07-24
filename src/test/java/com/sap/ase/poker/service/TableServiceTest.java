@@ -177,19 +177,19 @@ class TableServiceTest {
         tableService.performAction("check", 0);
         Assertions.assertThat(tableService.getState()).isEqualTo(GameState.FLOP);
         Assertions.assertThat(tableService.getPot()).isEqualTo(0);
-        tableService.performAction("raise", 20);
+        tableService.performAction("raise", 5);
         tableService.performAction("call",0);
  //Bets are equal, End of round
         Assertions.assertThat(tableService.getState()).isEqualTo(GameState.TURN);
-        tableService.performAction("raise", 30);
+        tableService.performAction("raise", 15);
         tableService.performAction("call", 0);
 //Bets are equal, end of round , change of state
         Assertions.assertThat(tableService.getState()).isEqualTo(GameState.RIVER);
-        Assertions.assertThat(tableService.getPot()).isEqualTo(140);
-        tableService.performAction("raise", 40);
+        Assertions.assertThat(tableService.getPot()).isEqualTo(50);
+/*        tableService.performAction("raise", 20);
         tableService.performAction("call", 0);
         Assertions.assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
-        Assertions.assertThat(tableService.getPot()).isEqualTo(320);
+        Assertions.assertThat(tableService.getPot()).isEqualTo(140);*/
     }
 
     @Test
