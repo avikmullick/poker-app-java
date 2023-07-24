@@ -369,6 +369,9 @@ class TableServiceTest {
         tableService.performAction("fold", 0);
 
         Assertions.assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
+        Assertions.assertThat(tableService.getWinner()).isPresent();
+        Assertions.assertThat(tableService.getWinner().get().getId()).isEqualTo("02");
+        Assertions.assertThat(tableService.getWinnerHand()).isNotEmpty();
     }
 
     private void setupForStartGame() {

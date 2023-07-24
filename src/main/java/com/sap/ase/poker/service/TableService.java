@@ -25,6 +25,7 @@ public class TableService {
     private List<Card> communityCardList;
 
     private Player currentPlayer;
+    private Player winnerPlayer;
 
     private int currentPlayerIndex;
 
@@ -78,19 +79,15 @@ public class TableService {
     }
 
     public Optional<Player> getWinner() {
-        // TODO: implement me
-        return Optional.of(new Player("al-capone", "Al capone", 500));
+        return Optional.ofNullable(winnerPlayer);
     }
 
     public List<Card> getWinnerHand() {
-        // TODO: implement me
-        return Arrays.asList(
-                new Card(Kind.ACE, Suit.CLUBS),
-                new Card(Kind.KING, Suit.CLUBS),
-                new Card(Kind.QUEEN, Suit.CLUBS),
-                new Card(Kind.JACK, Suit.CLUBS),
-                new Card(Kind.TEN, Suit.CLUBS)
-        );
+        if(winnerPlayer!=null){
+            return winnerPlayer.getHandCards();
+        } else {
+            return null;
+        }
     }
 
     public void start() {
@@ -168,19 +165,17 @@ public class TableService {
                 playersBetMap.put(currentPlayer.getId(), currentPlayer.getBet());
                 betAmount = lastBetAmount;
                 break;
-            default:
-                throw new IllegalActionException("Action is Invalid " + action);
-
             case "fold":
                 int count = 0;
 
                 Player currentPlayer = getCurrentPlayer().get();
                 currentPlayer.setInactive();
-
+                Player expectedWinner=null;
                 for (Player player : playerList
                 ) {
                     if ((player != currentPlayer && player.isActive())) {
                         count++;
+                        expectedWinner=player;
                         if (count > 1) {
                             break;
                         }
@@ -188,8 +183,12 @@ public class TableService {
                 }
 
                 if (count == 1) {
+                    winnerPlayer=expectedWinner;
                     this.gameState = GameState.ENDED;
                 }
+                break;
+            default:
+                throw new IllegalActionException("Action is Invalid " + action);
         }
         deriveNextPlayerToBeCurrentPlayer();
         lastBetAmount = betAmount;
