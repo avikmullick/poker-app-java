@@ -131,6 +131,7 @@ public class TableService {
         Player newPlayer = new Player(playerId, playerName, 100);
         newPlayer.setInactive();
         playerList.add(newPlayer);
+        playersBetMap.put(playerId,0);
     }
 
     public void performAction(String action, int amount) throws IllegalAmountException, IllegalActionException {
