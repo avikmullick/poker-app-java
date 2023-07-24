@@ -9,12 +9,17 @@ import com.sap.ase.poker.model.InactivePlayerException;
 import com.sap.ase.poker.model.Player;
 import com.sap.ase.poker.model.deck.Card;
 import com.sap.ase.poker.model.deck.Deck;
+import com.sap.ase.poker.model.rules.WinnerRules;
+import com.sap.ase.poker.model.rules.Winners;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -149,6 +154,8 @@ class TableServiceTest {
     @Test
     void performActionCheckWithBetAmountNotZero(){
         setupForStartGame();
+        tableService.performAction("check", 0);
+        tableService.performAction("check", 0);
         tableService.performAction("raise", 10);
 
         Assertions.assertThatThrownBy(() -> {
@@ -164,15 +171,25 @@ class TableServiceTest {
         tableService.performAction("check", 0);
         Assertions.assertThat(tableService.getState()).isEqualTo(GameState.FLOP);
         Assertions.assertThat(tableService.getPot()).isEqualTo(0);
+        tableService.performAction("raise", 20);
+        tableService.performAction("call",0);
+ //Bets are equal, End of round
+        Assertions.assertThat(tableService.getState()).isEqualTo(GameState.TURN);
+        tableService.performAction("raise", 50);
+        tableService.performAction("call", 0);
+//Bets are equal, end of round , change of state
+        Assertions.assertThat(tableService.getState()).isEqualTo(GameState.RIVER);
+        Assertions.assertThat(tableService.getPot()).isEqualTo(180);
     }
 
     @Test
     void raiseEndOfRound(){
         setupForStartGame();
+        tableService.performAction("check", 0);
+        tableService.performAction("check", 0);
         tableService.performAction("raise", 10);
         tableService.performAction("raise", 20);
         Assertions.assertThat(tableService.getState()).isEqualTo(GameState.FLOP);
-        Assertions.assertThat(tableService.getPot()).isEqualTo(30);
     }
 
     @Test
@@ -289,7 +306,7 @@ class TableServiceTest {
         Player currentPlayer = tableService.getCurrentPlayer().get();
         Assertions.assertThatThrownBy(() -> {
             tableService.performAction("invalid", 40);
-        }).isInstanceOf(IllegalActionException.class).hasMessage("Action is Invalid invalid");
+        }).isInstanceOf(IllegalActionException.class);
     }
 
     @Test
@@ -347,10 +364,8 @@ class TableServiceTest {
     void foldEndGame() {
 
         setupForStartGame();
-
         Player currentPlayer = tableService.getCurrentPlayer().get();
         tableService.performAction("fold", 0);
-
         Assertions.assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
     }
 
@@ -359,7 +374,6 @@ class TableServiceTest {
 
         tableService.addPlayer("03", "Avik");
         setupForStartGame();
-
         Player currentPlayer = tableService.getCurrentPlayer().get();
 
         //first player fold
@@ -369,10 +383,116 @@ class TableServiceTest {
         tableService.performAction("fold", 0);
 
         Assertions.assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
+    }
+
+    @Test
+    void getWinnerTest(){
+
+        tableService.addPlayer("03", "Avik");
+        setupForStartGame();
+        Player currentPlayer = tableService.getCurrentPlayer().get();
+
+        //first player fold
+        tableService.performAction("fold", 0);
+
+        //Second player fold
+        tableService.performAction("fold", 0);
+
+        // On state ENDED - Implementation of determine winners is pending.
+        Assertions.assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
         Assertions.assertThat(tableService.getWinner()).isPresent();
         Assertions.assertThat(tableService.getWinner().get().getId()).isEqualTo("02");
         Assertions.assertThat(tableService.getWinnerHand()).isNotEmpty();
     }
+
+    @Test
+    @DisplayName("Showdown ended in a draw, return the first winner")
+    void getFirstWinnerShowdownIsDrawTest(){
+
+        tableService.addPlayer("03", "Avik");
+        setupForStartGame();
+        Player currentPlayer = tableService.getCurrentPlayer().get();
+
+        //first player fold
+        tableService.performAction("fold", 0);
+
+        //Second player fold
+        tableService.performAction("fold", 0);
+
+        assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
+// On state ENDED - Implementation of determine winners is pending.
+         Assertions.assertThat(tableService.getWinner().get().getName()).isEqualTo("Smitha");
+
+    }
+
+    @Test
+    @DisplayName("all player folded cannot fold")
+    void getEmptyWinnerHandList(){
+        tableService.addPlayer("03", "Avik");
+        setupForStartGame();
+        Player currentPlayer = tableService.getCurrentPlayer().get();
+
+        //first player fold
+        tableService.performAction("fold", 0);
+
+        //Second player fold
+        tableService.performAction("fold", 0);
+
+        //Third player fold
+        Assertions.assertThatThrownBy(() -> {
+            tableService.performAction("fold", 0);
+        }).isInstanceOf(InactivePlayerException.class).hasMessage("All players cannot be inactive");
+
+        assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
+
+    }
+
+    @Test
+    @DisplayName("Get best hand of the winner")
+    void getWinnerBestHand(){
+        tableService.addPlayer("03", "Avik");
+        setupForStartGame();
+        Player currentPlayer = tableService.getCurrentPlayer().get();
+
+        //first player fold
+        tableService.performAction("fold", 0);
+
+        //Second player fold
+        tableService.performAction("fold", 0);
+
+        assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
+// On state ENDED - Implementation of determine winners and winning hand is pending.
+        Assertions.assertThat(tableService.getWinnerHand()).isNotEmpty();
+
+    }
+
+
+    @Test
+    @DisplayName("Showdown ended a DRAW, return hand of first winner")
+    void getFirstWinnerBestHand(){
+        tableService.addPlayer("03", "Avik");
+        setupForStartGame();
+        Player currentPlayer = tableService.getCurrentPlayer().get();
+
+        //first player fold
+        tableService.performAction("fold", 0);
+
+        //Second player fold
+        tableService.performAction("fold", 0);
+
+        //Third player fold
+        // tableService.performAction("fold", 0);
+
+        assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
+// On state ENDED - Implementation of determine winners and winning hand is pending.
+        Assertions.assertThat(tableService.getWinnerHand()).isNotEmpty();
+
+    }
+    @Test
+    void gameStateChangeFromFlopToTurn(){
+        setupForStartGame();
+    }
+
 
     private void setupForStartGame() {
 

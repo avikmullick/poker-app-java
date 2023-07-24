@@ -7,11 +7,16 @@ import com.sap.ase.poker.model.InactivePlayerException;
 import com.sap.ase.poker.model.Player;
 import com.sap.ase.poker.model.deck.Card;
 import com.sap.ase.poker.model.deck.Deck;
-import com.sap.ase.poker.model.deck.Kind;
-import com.sap.ase.poker.model.deck.Suit;
+import com.sap.ase.poker.model.rules.Winners;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 @Service
@@ -34,6 +39,8 @@ public class TableService {
     private int potAmount;
 
     private HashMap<String, Integer> playersBetMap;
+
+    private Winners winners;
 
     public TableService(Supplier<Deck> deckSupplier) {
         this.deckSupplier = deckSupplier;
@@ -86,7 +93,7 @@ public class TableService {
         if(winnerPlayer!=null){
             return winnerPlayer.getHandCards();
         } else {
-            return null;
+            return new ArrayList<Card>();
         }
     }
 
@@ -118,6 +125,7 @@ public class TableService {
     public void performAction(String action, int amount) throws IllegalAmountException, IllegalActionException {
         boolean validAction = false;
         int betAmount = amount;
+        GameState oldGameState = this.gameState ;
         switch (action) {
             case "check":
                 if (amount != 0) {
@@ -158,10 +166,17 @@ public class TableService {
                 if (!validAction) {
                     throw new IllegalActionException("Call not possible before Raise");
                 }
-                if (currentPlayer.getCash() < lastBetAmount - currentPlayer.getBet()) {
+                int lastPlayerBet = 0;
+                if ( currentPlayerIndex != 0 ) {
+                    lastPlayerBet = playerList.get(currentPlayerIndex - 1).getBet();
+                }else{
+                    lastPlayerBet = playerList.get(playerList.size()- 1).getBet();
+                }
+                if (currentPlayer.getCash() < lastPlayerBet - currentPlayer.getBet()) {
                     throw new IllegalAmountException("The amount of call exceeds the player's remaining cash.");
                 }
-                currentPlayer.bet(lastBetAmount - currentPlayer.getBet());
+
+                currentPlayer.bet(lastPlayerBet - currentPlayer.getBet());
                 playersBetMap.put(currentPlayer.getId(), currentPlayer.getBet());
                 betAmount = lastBetAmount;
                 break;
@@ -190,9 +205,53 @@ public class TableService {
             default:
                 throw new IllegalActionException("Action is Invalid " + action);
         }
-        deriveNextPlayerToBeCurrentPlayer();
         lastBetAmount = betAmount;
         System.out.printf("Action performed: %s, amount: %d%n", action, amount);
+        deriveNextPlayerToBeCurrentPlayer();
+        /** Check end of round. If round has ended, change game state and calculate pot amount
+         * Change the game state now **/
+
+        if ( currentPlayerIndex == 0 && oldGameState == this.gameState && checkEndOfRound()){
+            changeGameState();
+            calculatePotAmount();
+        }
+        if(gameState == GameState.ENDED){
+            //Kailash ----DETERMINE_WINNERS, POT DISTRIBUTION
+        }
+    }
+
+    private boolean checkEndOfRound() {
+        int bet = 0;
+            for (Player player : playerList) {
+                if (player.isActive()) {
+                    if (bet == 0 ) {
+                        bet = player.getBet() ;
+                    }else {
+                        if( bet != player.getBet())
+                        {
+                           return false;
+                        }
+                    }
+                }
+            }
+        return true;
+    }
+
+    private void changeGameState() {
+        switch (gameState) {
+            case PRE_FLOP:
+                gameState = GameState.FLOP;
+                break;
+            case FLOP:
+                gameState = GameState.TURN;
+                break;
+            case TURN:
+                gameState = GameState.RIVER;
+                break;
+            case RIVER:
+                gameState = GameState.ENDED;
+                break;
+        }
     }
 
     /**
@@ -206,8 +265,6 @@ public class TableService {
                 if (!playerList.get(currentPlayerIndex).isActive()) {
                     throw new InactivePlayerException("All players cannot be inactive");
                 }
-                gameState = GameState.FLOP;
-                calculatePotAmount();
             }
         } while (!playerList.get(currentPlayerIndex).isActive());
         this.currentPlayer = playerList.get(currentPlayerIndex);
@@ -249,4 +306,5 @@ public class TableService {
                 .findAny()
                 .orElse(null);
     }
+
 }
