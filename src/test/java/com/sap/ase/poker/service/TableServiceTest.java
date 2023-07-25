@@ -9,6 +9,8 @@ import com.sap.ase.poker.model.InactivePlayerException;
 import com.sap.ase.poker.model.Player;
 import com.sap.ase.poker.model.deck.Card;
 import com.sap.ase.poker.model.deck.Deck;
+import com.sap.ase.poker.model.deck.Kind;
+import com.sap.ase.poker.model.deck.Suit;
 import com.sap.ase.poker.model.rules.WinnerRules;
 import com.sap.ase.poker.model.rules.Winners;
 import org.assertj.core.api.Assertions;
@@ -554,6 +556,23 @@ class TableServiceTest {
         setupForStartGame();
     }
 
+    @Test
+    void determineWinner(){
+        setupForStartGame();
+        tableService.performAction("check", 0);
+        tableService.performAction("check", 0);
+        tableService.performAction("check", 0);
+        tableService.performAction("check", 0);
+        tableService.performAction("check", 0);
+        tableService.performAction("check", 0);
+        tableService.performAction("raise", 10);
+        Mockito.when(card.getSuit()).thenReturn(Suit.DIAMONDS);
+        Mockito.when(card.getKind()).thenReturn(Kind.JACK);
+        tableService.performAction("call", 0);
+        assertThat(tableService.getState()).isEqualTo(GameState.ENDED);
+        Assertions.assertThat(tableService.getWinnerHand()).isNotEmpty();
+
+    }
 
     private void setupForStartGame() {
 
